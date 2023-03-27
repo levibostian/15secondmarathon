@@ -58,48 +58,43 @@
                 }
 
                 // 4. The API will call this function when the video player is ready.
-                var currentVideoIndex = 0
-                var youtubePlayer
-
+                var youtubePlayer // make player available to other functions.
                 function onPlayerReady(event) {
                     youtubePlayer = event.target 
-                    currentVideoIndex = 1
                     
-                    startPlayingVideo(1340)
+                    syncPlayerWithLive()
+                }
+
+                function syncPlayerWithLive() {
+                    var dateNow = new Date()
+                    var secondsSinceEpoch = dateNow.getTime() / 1000
+
+                    // Get the mod which means we will always get an array index not out of rate. 
+                    // Round the floating point using .toFixed()
+                    // parseInt() because .toFixed returns string 
+                    const marathonIndex = parseInt((secondsSinceEpoch % videos.totalSecondsOfAllVideos).toFixed())
+
+                    const marathonVideoToPlayMetadata = videos.marathonFindOffset[marathonIndex]                    
+                    const nextVideoToPlay = videos.videos[marathonVideoToPlayMetadata.videosIndex]
+                    const startSeconds = marathonVideoToPlayMetadata.secondsOffset
+
+                    console.log(`next video to play ${JSON.stringify(nextVideoToPlay)}, start seconds: ${startSeconds}`)
+
+                    youtubePlayer.loadVideoById({
+                        videoId: nextVideoToPlay.videoId,
+                        startSeconds
+                    });
                 }
 
                 // 5. The API calls this function when the player's state changes.
                 //    The function indicates that when playing a video (state=1),
                 //    the player should play for six seconds and then stop.
                 function onPlayerStateChange(event) {
-                    if (event.data == YT.PlayerState.ENDED) {
+                    if (event.data == YT.PlayerState.ENDED) {                    
                         console.log('video ended')
 
-                        currentVideoIndex += 1
-                        console.log(`new index = ${currentVideoIndex}, number of videos: ${videos.videos.length}`)
-
-                        if (currentVideoIndex >= videos.videos.length) {
-                            console.log('hit end of videos array. resetting to index 0')
-                            currentVideoIndex = 0                            
-                        }
-
-                        startPlayingVideo()
+                        syncPlayerWithLive()
                     }
-                }
-
-                function stopVideo() {
-                    player.stopVideo();
-                }
-
-                function startPlayingVideo(offset) {                    
-                    videoToPlay = videos.videos[currentVideoIndex]
-                    startSeconds = offset || 0
-                    console.log(`next video to play ${JSON.stringify(videoToPlay)}, start seconds: ${startSeconds}`)
-
-                    youtubePlayer.loadVideoById({
-                        videoId: videoToPlay.watchId,
-                        startSeconds: startSeconds
-                    });
                 }
             })            
         </script>
