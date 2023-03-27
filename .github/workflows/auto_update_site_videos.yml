@@ -1,0 +1,33 @@
+name: Automatically update site videos
+
+on:
+  workflow_dispatch: # allow running this manually
+  schedule: # automatically run this workflow periodically
+    - cron: '0 0 * * *' # Run at midnight every day - https://cron.help/#0_0_*_*_*
+
+jobs:
+  generate-and-push-site:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to push commits to branch 
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install deno language which is what the script is created in 
+      uses: denoland/setup-deno@v1
+      with:
+        deno-version: v1.x
+
+    - name: Run script that generates the site content 
+      run: deno run --allow-all scripts/update_data.ts
+      env:
+        YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+
+    - name: Deploy by force pushing commit to branch only used for GitHub pages deployment 
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        folder: .
+        branch: gh-pages
+        single-commit: true 
+        force: true 
+      
