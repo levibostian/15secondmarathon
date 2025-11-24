@@ -8,50 +8,125 @@ This project can be run as a Docker container to automatically update the site d
 - YouTube API key
 - GitHub Personal Access Token with `repo` scope
 
+## Required Environment Variables
+
+See `.env.example` for the list of required variables:
+- `YOUTUBE_API_KEY` - YouTube API key for fetching playlist data
+- `GITHUB_TOKEN` - GitHub Personal Access Token with `repo` scope
+- `GIT_EMAIL` - Git commit author email
+- `GIT_NAME` - Git commit author name
+
 ## Setup
 
-1. **Copy environment variables template:**
-   ```bash
-   cp .env.example .env
-   ```
-
-2. **Edit `.env` with your credentials:**
-   ```bash
-   YOUTUBE_API_KEY=your_actual_key
-   GITHUB_TOKEN=your_actual_token
-   GIT_EMAIL=your@email.com
-   GIT_NAME=Your Name
-   ```
-
-3. **Build the Docker image:**
-   ```bash
-   docker-compose build
-   ```
+**Build the Docker image:**
+```bash
+docker-compose build
+# or
+docker build -t 15secondmarathon-updater:latest .
+```
 
 ## Usage
 
-### Run manually:
+### Option 1: Docker Compose with inline env vars
 ```bash
-docker-compose run --rm update-data
+docker-compose run --rm \
+  -e YOUTUBE_API_KEY="your_key" \
+  -e GITHUB_TOKEN="your_token" \
+  -e GIT_EMAIL="your@email.com" \
+  -e GIT_NAME="Your Name" \
+  update-data
 ```
 
-### Set up cron job (Linux/macOS):
-
-Add to your crontab (`crontab -e`):
-```bash
-# Run daily at midnight
-0 0 * * * cd /path/to/15secondmarathon && docker-compose run --rm update-data >> /var/log/15secondmarathon.log 2>&1
-```
-
-### Alternative: Docker run command
+### Option 2: Direct docker run command
 ```bash
 docker run --rm \
   -v $(pwd):/repo \
-  -e YOUTUBE_API_KEY="$YOUTUBE_API_KEY" \
-  -e GITHUB_TOKEN="$GITHUB_TOKEN" \
-  -e GIT_EMAIL="$GIT_EMAIL" \
-  -e GIT_NAME="$GIT_NAME" \
+  -e YOUTUBE_API_KEY="your_key" \
+  -e GITHUB_TOKEN="your_token" \
+  -e GIT_EMAIL="your@email.com" \
+  -e GIT_NAME="Your Name" \
   15secondmarathon-updater:latest
+```
+
+### Option 3: Using shell environment variables
+```bash
+# Export variables first
+export YOUTUBE_API_KEY="your_key"
+export GITHUB_TOKEN="your_token"
+export GIT_EMAIL="your@email.com"
+export GIT_NAME="Your Name"
+
+# Then run (variables will be inherited)
+docker-compose run --rm \
+  -e YOUTUBE_API_KEY \
+  -e GITHUB_TOKEN \
+  -e GIT_EMAIL \
+  -e GIT_NAME \
+  update-data
+```
+
+## Scheduling with Cron
+
+### Example cron job (Linux/macOS):
+
+Create a shell script (`/opt/scripts/update-15secondmarathon.sh`):
+```bash
+#!/bin/bash
+cd /path/to/15secondmarathon
+docker-compose run --rm \
+  -e YOUTUBE_API_KEY="your_key" \
+  -e GITHUB_TOKEN="your_token" \
+  -e GIT_EMAIL="bot@example.com" \
+  -e GIT_NAME="15SecondMarathon Bot" \
+  update-data
+```
+
+Make it executable:
+```bash
+chmod +x /opt/scripts/update-15secondmarathon.sh
+```
+
+Add to crontab (`crontab -e`):
+```bash
+# Run daily at midnight
+0 0 * * * /opt/scripts/update-15secondmarathon.sh >> /var/log/15secondmarathon.log 2>&1
+```
+
+### Alternative: systemd timer (Linux)
+
+Create `/etc/systemd/system/15secondmarathon.service`:
+```ini
+[Unit]
+Description=Update 15 Second Marathon data
+
+[Service]
+Type=oneshot
+WorkingDirectory=/path/to/15secondmarathon
+Environment="YOUTUBE_API_KEY=your_key"
+Environment="GITHUB_TOKEN=your_token"
+Environment="GIT_EMAIL=bot@example.com"
+Environment="GIT_NAME=15SecondMarathon Bot"
+ExecStart=/usr/bin/docker-compose run --rm -e YOUTUBE_API_KEY -e GITHUB_TOKEN -e GIT_EMAIL -e GIT_NAME update-data
+```
+
+Create `/etc/systemd/system/15secondmarathon.timer`:
+```ini
+[Unit]
+Description=Run 15 Second Marathon update daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+Enable and start:
+```bash
+systemctl daemon-reload
+systemctl enable 15secondmarathon.timer
+systemctl start 15secondmarathon.timer
 ```
 
 ## What It Does

@@ -6,10 +6,10 @@ services:
     image: 15secondmarathon-updater:latest
     volumes:
       - .:/repo
+    # Environment variables should be passed via command line
+    # Example: docker-compose run --rm -e YOUTUBE_API_KEY="..." -e GITHUB_TOKEN="..." update-data
     environment:
-      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
-      - GIT_EMAIL=${GIT_EMAIL:-bot@example.com}
-      - GIT_NAME=${GIT_NAME:-15SecondMarathon Bot}
-    # Container will exit after running the script
-    # Use with: docker-compose run --rm update-data
+      - YOUTUBE_API_KEY
+      - GITHUB_TOKEN
+      - GIT_EMAIL
+      - GIT_NAME
