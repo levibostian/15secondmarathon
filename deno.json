@@ -1,0 +1,10 @@
+{
+  "tasks": {
+    "update": "deno run --allow-all scripts/update_data.ts",
+    "check": "deno check scripts/update_data.ts"
+  },
+  "imports": {
+    "youtube": "https://deno.land/x/youtube@v0.3.0/mod.ts",
+    "moment": "https://deno.land/x/momentjs@2.29.1-deno/mod.ts"
+  }
+}

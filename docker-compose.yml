@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  update-data:
+    build: .
+    image: 15secondmarathon-updater:latest
+    volumes:
+      - .:/repo
+    environment:
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GIT_EMAIL=${GIT_EMAIL:-bot@example.com}
+      - GIT_NAME=${GIT_NAME:-15SecondMarathon Bot}
+    # Container will exit after running the script
+    # Use with: docker-compose run --rm update-data
